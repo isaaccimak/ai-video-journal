@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   backend:
     build: ./backend
@@ -10,20 +8,29 @@ services:
       - whisper_cache:/root/.cache/whisper
     command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
     environment:
-      - OLLAMA_BASE_URL=http://ollama:11434
-    depends_on:
-      - ollama
+      # Default: use the containerized Ollama service
+      # - OLLAMA_BASE_URL=http://ollama:11434
+      # To use host-running Ollama (e.g., for MPS), swap the line above for:
+      - OLLAMA_BASE_URL=http://host.docker.internal:11434
+      # Whisper device selector (containers are CPU-only on macOS):
+      # - WHISPER_DEVICE=cpu
+    # depends_on:
+    #   - ollama
 
+  # Enable this service with `docker compose --profile local-ollama up ollama`
   ollama:
     image: ollama/ollama:latest
+    profiles: ["local-ollama"]
     ports:
       - "11434:11434"
     volumes:
       - ollama_data:/root/.ollama
 
+  # Optional helper to pre-pull a model when using the local-ollama profile
   ollama-pull-model:
     image: ollama/ollama:latest
     container_name: ollama-pull-model
+    profiles: ["local-ollama"]
     volumes:
       - ollama_data:/root/.ollama
     entrypoint: /bin/sh

@@ -9,7 +9,8 @@ class LLMService:
         prompt = f"""
         Based on the following user journal entry, 
         ask a thoughtful follow-up question to help them reflect deeper, 
-        keep it to 15 words or less:
+        keep it to 15 words or less. If you think that the user is done talking about this topic,
+        ask a new question. 
         Journal Entry: {context}
         Follow-up Question:
         """
