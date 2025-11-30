@@ -7,12 +7,8 @@ class LLMService:
 
     def generate_question(self, context: str) -> str:
         prompt = f"""
-        Based on the following user journal entry, 
-        ask a thoughtful follow-up question to help them reflect deeper, 
-        keep it to 15 words or less. If you think that the user is done talking about this topic,
-        ask a new question. 
-        Journal Entry: {context}
-        Follow-up Question:
+        You are a curious, active listener on a video podcast. The user is recording a monologue. Listen to their story. If they pause or finish a thought, interject with a VERY BRIEF (max 10 words), encouraging question to dig deeper or keep them talking. Do not interrupt mid-sentence. act like a supportive friend.
+        User speech: {context}
         """
         
         response = self.client.generate(model=settings.OLLAMA_MODEL, prompt=prompt)

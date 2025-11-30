@@ -6,3 +6,10 @@ ollama==0.1.6
 pydantic==2.6.0
 pydantic-settings==2.1.0
 requests==2.31.0
+packaging==25.0
+torch==2.9.1
+torchaudio==2.9.1
+websockets==15.0.1
+transformers==4.37.2
+accelerate==0.27.2
+numpy==2.2.6

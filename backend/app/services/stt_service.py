@@ -1,37 +1,61 @@
-from typing import Optional
+from typing import AsyncIterator, Optional
 
-import torch
-import whisper
+from app.core.config import settings, STTModel
+from app.services.providers import (
+    BatchSTTProvider,
+    DeepgramProvider,
+    StreamingSTTProvider,
+    TranscriptEvent,
+    WhisperBatchProvider,
+)
 
-from app.core.config import settings
 
 class STTService:
     def __init__(self):
-        # Load model on startup. This might take a while on first run.
-        self.device = self._select_device(settings.WHISPER_DEVICE)
-        self.device = "cpu" # After testing, Whisper base en on CPU is significantly faster than MPS
-        print(f"STT self.device = {self.device}")
-        self.model = whisper.load_model(settings.WHISPER_MODEL, device=self.device)
+        self.batch_provider: BatchSTTProvider
+        self.streaming_provider: Optional[StreamingSTTProvider] = None
 
-    def transcribe(self, file_path: str) -> str:
-        # Suppress FP16 warning on CPU
-        fp16 = False if self.device == "cpu" else True
-        # result = self.model.transcribe(file_path, fp16=fp16, beam_size=settings.WHISPER_BEAM_SIZE)
-        result = self.model.transcribe(file_path, fp16=fp16) # i think default beam is 1, not 5 contrary to what the documentation says
-        return result["text"].strip()
+        # if settings.STT_MODEL == STTModel.DEEPGRAM:
+        #     print("Initializing Deepgram STT Provider...")
+        #     try:
+        #         provider = DeepgramProvider()
+        #         self.batch_provider = provider
+        #         self.streaming_provider = provider
+        #     except Exception as e:
+        #         print(f"Failed to init Deepgram: {e}. Falling back to Whisper.")
+        #         self.batch_provider = WhisperBatchProvider()
+        # else:
+        #     print("Initializing Whisper STT Provider...")
+        #     self.batch_provider = WhisperBatchProvider()
+        try:
+            match settings.STT_MODEL:
+                case STTModel.DEEPGRAM:
+                    print("Initializing Deepgram STT Provider...")
+                    provider = DeepgramProvider()
+                    self.batch_provider = provider
+                    self.streaming_provider = provider
+                case STTModel.WHISPER:
+                    print("Initializing Whisper STT Provider...")
+                    self.batch_provider = WhisperBatchProvider()
+                case _:
+                    raise ValueError(f"Unsupported STT model: {settings.STT_MODEL}")
+        except Exception as e:
+            print(f"Failed to init {settings.STT_MODEL}: {e}. Falling back to Whisper.")
+            self.batch_provider = WhisperBatchProvider()
 
-    def _select_device(self, preferred: Optional[str]) -> str:
-        """Pick the best available device honoring user preference."""
-        pref = (preferred or "auto").lower()
-        if pref == "mps" or pref == "auto":
-            if torch.backends.mps.is_available():
-                return "mps"
-        if pref == "cuda" or pref == "auto":
-            if torch.cuda.is_available():
-                return "cuda"
-        if pref in {"cpu", "auto"}:
-            return "cpu"
-        # Fallback if preference is unknown or unavailable
-        return "cpu"
+    def transcribe_file(self, file_path: str) -> str:
+        return self.batch_provider.transcribe_file(file_path)
+
+    async def stream(
+        self, audio_chunks: AsyncIterator[bytes]
+    ) -> AsyncIterator[TranscriptEvent]:
+        if not self.streaming_provider:
+            raise NotImplementedError(
+                "Streaming transcription not supported for this provider"
+            )
+
+        async for event in self.streaming_provider.stream(audio_chunks):
+            yield event
+
 
 stt_service = STTService()
