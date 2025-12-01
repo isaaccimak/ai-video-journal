@@ -47,5 +47,3 @@ class VADService:
         self.buffer = bytearray()
         self.speech_buffer = bytearray()
         self.is_speaking = False
-
-vad_service = VADService()

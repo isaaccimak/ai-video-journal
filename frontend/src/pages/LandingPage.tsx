@@ -26,7 +26,7 @@ const LandingPage: React.FC = () => {
 
                 <button
                     onClick={() => navigate('/session')}
-                    className="group relative inline-flex items-center gap-3 px-8 py-4 bg-white text-black rounded-full text-lg font-medium transition-all hover:scale-105 hover:shadow-xl active:scale-95 hover:bg-stone-200"
+                    className="group relative inline-flex items-center gap-3 px-8 py-4 bg-white text-black rounded-full text-lg font-medium transition-all hover:scale-105 hover:shadow-xl active:scale-95 hover:bg-stone-200 cursor-pointer"
                 >
                     Let's reflect
                     <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />

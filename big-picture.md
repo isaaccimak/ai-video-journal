@@ -32,3 +32,9 @@
    - might have cutoff issues
    - requires users to have decent devices
 
+# User Auth
+
+1. JWT token
+   - user_id
+   - user_chosen_model (need to double check if this is a good idea, might go against jwt token good practices)
+   - user_tier

@@ -15,18 +15,6 @@ class STTService:
         self.batch_provider: BatchSTTProvider
         self.streaming_provider: Optional[StreamingSTTProvider] = None
 
-        # if settings.STT_MODEL == STTModel.DEEPGRAM:
-        #     print("Initializing Deepgram STT Provider...")
-        #     try:
-        #         provider = DeepgramProvider()
-        #         self.batch_provider = provider
-        #         self.streaming_provider = provider
-        #     except Exception as e:
-        #         print(f"Failed to init Deepgram: {e}. Falling back to Whisper.")
-        #         self.batch_provider = WhisperBatchProvider()
-        # else:
-        #     print("Initializing Whisper STT Provider...")
-        #     self.batch_provider = WhisperBatchProvider()
         try:
             match settings.STT_MODEL:
                 case STTModel.DEEPGRAM:
@@ -49,13 +37,10 @@ class STTService:
     async def stream(
         self, audio_chunks: AsyncIterator[bytes]
     ) -> AsyncIterator[TranscriptEvent]:
-        if not self.streaming_provider:
-            raise NotImplementedError(
-                "Streaming transcription not supported for this provider"
-            )
+        # if not self.streaming_provider:
+        #     raise NotImplementedError(
+        #         "Streaming transcription not supported for this provider"
+        #     )
 
         async for event in self.streaming_provider.stream(audio_chunks):
             yield event
-
-
-stt_service = STTService()

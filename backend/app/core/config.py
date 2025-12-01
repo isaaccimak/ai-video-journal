@@ -27,5 +27,5 @@ class Settings(BaseSettings):
     VAD_THRESHOLD: float = 0.8 # Higher threshold to reduce false positives
     MIN_AUDIO_LENGTH: float = 0.2  # Minimum audio length to transcribe (seconds)
     VAD_PAUSE_THRESHOLD: float = 0.5 # Silence duration to trigger transcription (seconds) to transcribe
-    POST_SPEAKING_SILENCE_THRESHOLD: float = 4.0 # Silence duration to trigger LLM
+    POST_SPEAKING_SILENCE_THRESHOLD: float = 2.0 # Silence duration to trigger LLM
 settings = Settings()

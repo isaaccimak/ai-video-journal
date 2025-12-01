@@ -1,6 +1,12 @@
 .PHONY: dev test install docker-up docker-down
 
 # Run the backend server locally (fastest for development)
+react:
+	cd frontend && npm run dev
+
+ollama:
+	ollama serve
+
 dev:
 	cd backend && uvicorn app.main:app --reload
 

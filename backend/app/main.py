@@ -4,6 +4,9 @@ import httpx
 import logging
 from app.api.routes import router
 from app.core.config import settings
+from app.services.stt_service import STTService
+from app.services.vad_service import VADService
+from app.services.llm_service import LLMService
 
 logging.basicConfig(level=logging.INFO)
 logging.getLogger("httpx").setLevel(logging.WARNING)
@@ -47,6 +50,9 @@ async def check_and_pull_model():
 async def lifespan(app: FastAPI):
     # Startup
     await check_and_pull_model()
+    app.state.stt_service = STTService()
+    app.state.vad_service = VADService()
+    app.state.llm_service = LLMService()
     yield
     # Shutdown
 

@@ -19,19 +19,19 @@ const SessionActionButtons: React.FC<SessionActionButtonsProps> = ({
     if (status !== 'review' && status !== 'saving') return null;
 
     return (
-        <div className="absolute top-8 right-8 flex items-center gap-4 animate-slide-in-right z-[80] pointer-events-auto">
-            <div className="glass-panel p-1 rounded-xl backdrop-blur-md flex items-center h-12">
+        <div className="absolute top-6 right-6 flex items-center gap-4 animate-slide-in-right z-80 pointer-events-auto">
+            <div className="glass-panel p-1 rounded-2xl backdrop-blur-md flex items-center h-12">
                 <button
                     onClick={discardSession}
                     disabled={status === 'saving'}
-                    className="px-4 h-full rounded-lg text-white/80 hover:bg-white/10 hover:text-red-400 transition-all flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="px-4 h-full rounded-xl text-white/80 hover:bg-white/10 hover:text-red-400 transition-all flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                     <Trash2 className="w-4 h-4" />
                     <span className="text-sm font-medium">Discard</span>
                 </button>
             </div>
 
-            <div className="glass-panel p-1 rounded-xl flex items-center gap-2 backdrop-blur-md h-12">
+            <div className="glass-panel p-1 rounded-2xl flex items-center gap-2 backdrop-blur-md h-12">
                 <input
                     type="text"
                     placeholder="Save File Name"
@@ -43,7 +43,7 @@ const SessionActionButtons: React.FC<SessionActionButtonsProps> = ({
                 <button
                     onClick={saveSession}
                     disabled={status === 'saving'}
-                    className="bg-white text-black px-4 h-full rounded-lg hover:bg-stone-200 transition-all flex items-center gap-2 font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="bg-white text-black px-4 h-full rounded-xl hover:bg-stone-200 transition-all flex items-center gap-2 font-medium disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                     {status === 'saving' ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
                     Save

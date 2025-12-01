@@ -2,9 +2,9 @@ import asyncio
 from typing import AsyncGenerator, Dict, Any
 
 from app.core.config import settings
-from app.services.vad_service import vad_service
-from app.services.stt_service import stt_service
-from app.services.llm_service import llm_service
+from app.services.vad_service import VADService
+from app.services.stt_service import STTService
+from app.services.llm_service import LLMService
 from app.utils.audio_buffer import AudioBufferManager
 from app.utils.audio_file import AudioFileHandler
 from app.utils.silence_detector import SilenceDetector
@@ -14,7 +14,7 @@ from app.utils.transcription_filter import TranscriptionFilter
 class JournalingSession:
     """Manages a journaling session with audio processing, transcription, and question generation."""
     
-    def __init__(self):
+    def __init__(self, stt_service: STTService, vad_service: VADService, llm_service: LLMService):
         """Initialize the journaling session with utility components."""
         # Calculate chunk size based on VAD interval
         chunk_size = int(settings.VAD_INTERVAL * settings.SAMPLE_RATE * 2)
@@ -24,6 +24,9 @@ class JournalingSession:
         self.audio_handler = AudioFileHandler(settings.SAMPLE_RATE)
         self.silence_detector = SilenceDetector()
         self.transcription_filter = TranscriptionFilter()
+        self.stt_service = stt_service
+        self.vad_service = vad_service
+        self.llm_service = llm_service
         
         # Session state
         self.speech_buffer = bytearray()
@@ -44,7 +47,7 @@ class JournalingSession:
         # Process chunks of specific size for VAD
         while self.buffer_manager.has_chunk():
             chunk = self.buffer_manager.get_chunk()
-            is_speech_chunk = vad_service.is_speech(chunk)
+            is_speech_chunk = self.vad_service.is_speech(chunk)
 
             if is_speech_chunk:
                 # Speech detected
@@ -72,7 +75,7 @@ class JournalingSession:
                         print(f"Ignoring short audio segment (< {settings.MIN_AUDIO_LENGTH}s)")
                         self.speech_buffer = bytearray()
                         self.silence_detector.reset()
-                        vad_service.reset()
+                        self.vad_service.reset()
                         continue
 
                     # Save buffer to temp file and transcribe
@@ -80,7 +83,7 @@ class JournalingSession:
                         temp_filename = self.audio_handler.save_to_wav(bytes(self.speech_buffer))
                         
                         # Transcribe (run in thread pool to avoid blocking)
-                        text = await asyncio.to_thread(stt_service.transcribe_file, temp_filename)
+                        text = await asyncio.to_thread(self.stt_service.transcribe_file, temp_filename)
                         print(f"Transcribed: {text}")
 
                         # Filter and validate transcription
@@ -98,7 +101,7 @@ class JournalingSession:
                     # Reset speech buffer
                     self.speech_buffer = bytearray()
                     self.silence_detector.reset()
-                    vad_service.reset()
+                    self.vad_service.reset()
 
                 # 2. LLM Trigger (Long pause)
                 if (len(self.accumulated_transcription.strip()) > 0 and 
@@ -111,7 +114,7 @@ class JournalingSession:
                     self.accumulated_transcription = ""  # Clear to avoid double triggering
 
                     try:
-                        question = await asyncio.to_thread(llm_service.generate_question, context)
+                        question = await asyncio.to_thread(self.llm_service.generate_question, context)
                         print(f"Generated Question: {question}")
 
                         yield {

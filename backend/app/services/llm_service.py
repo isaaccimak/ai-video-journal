@@ -13,5 +13,3 @@ class LLMService:
         
         response = self.client.generate(model=settings.OLLAMA_MODEL, prompt=prompt)
         return response['response'].strip()
-
-llm_service = LLMService()

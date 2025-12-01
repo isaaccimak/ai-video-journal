@@ -44,7 +44,8 @@ const SessionControls: React.FC<SessionControlsProps> = ({
             {status === 'recording' && (
                 <button
                     onClick={stopSession}
-                    className="flex items-center justify-center w-16 h-16 rounded-full bg-red-500 hover:bg-red-600 text-white transition-all shadow-lg hover:scale-105 active:scale-95"
+                    // recording button
+                    className="flex items-center cursor-pointer justify-center w-16 h-16 rounded-full bg-red-500 hover:bg-red-600 text-white transition-all shadow-lg hover:scale-105 active:scale-95"
                 >
                     <Square className="w-6 h-6 fill-current" />
                 </button>

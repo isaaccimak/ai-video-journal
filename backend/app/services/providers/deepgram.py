@@ -50,5 +50,88 @@ class DeepgramProvider(BatchSTTProvider, StreamingSTTProvider):
             return ""
 
     async def stream(self, audio_chunks: AsyncIterator[bytes]) -> AsyncIterator[TranscriptEvent]:
-        # TODO: implement Deepgram WebSocket streaming
-        raise NotImplementedError("Streaming transcription not implemented for Deepgram")
+        import asyncio
+        from deepgram import (
+            DeepgramClient,
+            DeepgramClientOptions,
+            LiveTranscriptionEvents,
+            LiveOptions,
+        )
+
+        # Create a queue to bridge callbacks to async iterator
+        queue = asyncio.Queue()
+        loop = asyncio.get_running_loop()
+
+        try:
+            # Initialize Deepgram Client
+            deepgram = DeepgramClient(self.api_key)
+
+            # Create a websocket connection to Deepgram
+            dg_connection = deepgram.listen.asynclive.v("1")
+
+            # Define event handlers
+            async def on_message(self, result, **kwargs):
+                if result.channel and result.channel.alternatives:
+                    transcript = result.channel.alternatives[0].transcript
+                    if transcript:
+                        await queue.put(TranscriptEvent(
+                            text=transcript,
+                            is_final=result.is_final
+                        ))
+
+            async def on_metadata(self, metadata, **kwargs):
+                # print(f"Metadata: {metadata}")
+                pass
+
+            async def on_error(self, error, **kwargs):
+                print(f"Deepgram Error: {error}")
+                # Signal error to the consumer? For now just log.
+
+            # Register handlers
+            dg_connection.on(LiveTranscriptionEvents.Transcript, on_message)
+            dg_connection.on(LiveTranscriptionEvents.Metadata, on_metadata)
+            dg_connection.on(LiveTranscriptionEvents.Error, on_error)
+
+            # Configure options
+            options = LiveOptions(
+                model="nova-2",
+                language="en-US",
+                smart_format=True,
+                interim_results=True,
+                punctuate=True,
+                encoding="linear16",
+                channels=1,
+                sample_rate=16000,
+            )
+
+            # Start the connection
+            if await dg_connection.start(options) is False:
+                print("Failed to start Deepgram connection")
+                return
+
+            # Start a task to send audio chunks
+            async def send_audio():
+                try:
+                    async for chunk in audio_chunks:
+                        await dg_connection.send(chunk)
+                except Exception as e:
+                    print(f"Error sending audio to Deepgram: {e}")
+                finally:
+                    await dg_connection.finish()
+                    # Signal end of stream to queue
+                    await queue.put(None)
+
+            send_task = asyncio.create_task(send_audio())
+
+            # Yield events from queue
+            while True:
+                event = await queue.get()
+                if event is None:
+                    break
+                yield event
+
+            await send_task
+
+        except Exception as e:
+            print(f"Deepgram streaming error: {e}")
+            raise
